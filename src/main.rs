@@ -6,7 +6,6 @@ extern crate serde;
 extern crate serde_json;
 extern crate birl;
 
-use std::io;
 /// Ways in which transactions can fail.
 #[derive(Debug, Clone, Serialize)]
 enum TransactionError{
@@ -93,7 +92,7 @@ fn transaction(strip: String) -> Result<Vec<u8>, TransactionError>{
 			Some(Box::new(output))
 		});
 
-		c.start_program();
+		c.start_program().map_err(|what| TransactionError::RuntimeError(what))?;
 		Ok(c.set_stdout(None))
 	}).map_err(|_| TransactionError::RuntimePanic)??;
 
@@ -197,7 +196,7 @@ fn main(){
 				TransactionError::Timeout
 			})
 			.map(|(stream, _)| (stream, ()))
-	}).for_each(|(stream, buffer)| {
+	}).for_each(|_| {
 		use futures::future;
 		future::ok(())
 	}).map_err(|e| eprintln!("[incoming()] Error: {:?}", e));
